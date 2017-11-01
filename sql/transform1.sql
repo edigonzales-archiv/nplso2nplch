@@ -1,6 +1,15 @@
 DELETE FROM npl_ch.geobasisdaten_typ_kt;
 DELETE FROM npl_ch.geobasisdaten_typ;
+DELETE FROM npl_ch.geobasisdaten_grundnutzung_zonenflaeche;
+DELETE FROM npl_ch.rechtsvorschrften_dokument;
+DELETE FROM npl_ch.localiseduri;
+DELETE FROM npl_ch.multilingualuri;
+DELETE FROM npl_ch.rechtsvorschrften_hinweisweiteredokumente;
+DELETE FROM npl_ch.geobasisdaten_typ_dokument;
 
+/*
+ * GRUNDNUTZUNG START
+ */
 WITH typ_kt AS
 (
   INSERT INTO npl_ch.geobasisdaten_typ_kt
@@ -64,9 +73,6 @@ grundnutzung_zonenflaeche AS
     LEFT JOIN typ_kommunal
     ON grundnutzung.typ_grundnutzung = typ_kommunal.nutzungsplanung_typ_grundnutzung_t_id
 ),
-/*
- * Now do the INSERTs.
- */
 typ_kommunal_insert AS
 (
   INSERT INTO npl_ch.geobasisdaten_typ
@@ -116,16 +122,153 @@ grundnutzung_zonenflaeche_insert AS
   FROM
     grundnutzung_zonenflaeche
   RETURNING *
+),
+rechtsvorschrften_dokument AS (
+  SELECT
+    nextval('npl_ch.t_ili2db_seq'::regclass) AS t_id,
+    t_id AS rechtsvorschrften_dokument_t_id,
+    CASE 
+      WHEN rechtsvorschrift IS TRUE THEN 'rechtsvorschrften_rechtsvorschrift'
+      ELSE 'rechtsvorschrften_dokument'
+    END AS t_type,
+    titel,
+    offiziellertitel,
+    abkuerzung,
+    kanton,
+    gemeinde,
+    publiziertab,
+    rechtsstatus,
+    bemerkungen,
+    'https://geoweb.so.ch/zonenplaene/Zonenplaene_pdf/' || textimweb AS textimweb
+  FROM
+    npl_so.rechtsvorschrften_dokument
+),
+rechtsvorschrften_dokument_insert AS (
+  INSERT INTO npl_ch.rechtsvorschrften_dokument
+    (
+      t_id,
+      t_type,
+      titel,
+      offiziellertitel,
+      abkuerzung,
+      kanton,
+      gemeinde,
+      publiziertab,
+      rechtsstatus,
+      bemerkungen
+    )
+  SELECT
+      t_id,
+      t_type,
+      titel,
+      offiziellertitel,
+      abkuerzung,
+      kanton,
+      gemeinde,
+      publiziertab,
+      rechtsstatus,
+      bemerkungen
+  FROM
+    rechtsvorschrften_dokument
+  RETURNING * 
+),
+multilingualuri_localiseduri_dokument AS (
+  SELECT
+    nextval('npl_ch.t_ili2db_seq'::regclass) AS t_id, -- multilingualuri t_id.
+    t_id AS rechtsvorschrften_dokument_t_id,
+    textimweb AS atext,
+    'de' AS alanguage
+  FROM
+    rechtsvorschrften_dokument
+),
+multilingualuri_dokument_insert AS (
+  INSERT INTO npl_ch.multilingualuri 
+    (
+      t_id,
+      rechtsvrschrftn_dkment_textimweb
+    )
+    SELECT
+      t_id,
+      rechtsvorschrften_dokument_t_id
+    FROM
+      multilingualuri_localiseduri_dokument  
+    RETURNING *
+),
+localiseduri_dokument_insert AS (
+  INSERT INTO npl_ch.localiseduri
+  (
+    alanguage,
+    atext,
+    multilingualuri_localisedtext
+  )
+  SELECT 
+    alanguage,
+    atext,
+    t_id
+  FROM
+    multilingualuri_localiseduri_dokument
+  RETURNING *
+),
+-- cross reference table: rechtsvorschrften_hinweisweiteredokumente
+rechtsvorschrften_hinweisweiteredokumente_insert AS 
+(
+  INSERT INTO npl_ch.rechtsvorschrften_hinweisweiteredokumente
+    (
+      ursprung,
+      hinweis
+    )
+  SELECT
+    u.ursprung,
+    d.t_id AS hinweis
+  FROM 
+  (
+    SELECT
+      d.t_id AS ursprung,
+      hwd.hinweis
+    FROM 
+      rechtsvorschrften_dokument AS d 
+      LEFT JOIN npl_so.rechtsvorschrften_hinweisweiteredokumente AS hwd
+      ON d.rechtsvorschrften_dokument_t_id = hwd.ursprung
+    WHERE
+      hwd.ursprung IS NOT NULL
+  ) AS u
+  LEFT JOIN rechtsvorschrften_dokument AS d 
+  ON d.rechtsvorschrften_dokument_t_id = u.hinweis
+  RETURNING *
+),
+geobasisdaten_typ_dokument AS 
+(
+  INSERT INTO npl_ch.geobasisdaten_typ_dokument 
+    (
+      typ,
+      vorschrift
+    )
+  SELECT
+    tg.typ,
+    d.t_id AS vorschrift
+  FROM
+  (
+    SELECT
+      typ.t_id AS typ,
+      tgd.dokument
+    FROM
+      typ_kommunal AS typ 
+      LEFT JOIN npl_so.nutzungsplanung_typ_grundnutzung_dokument AS tgd
+      ON typ.nutzungsplanung_typ_grundnutzung_t_id = tgd.typ_grundnutzung
+    WHERE
+      tgd.typ_grundnutzung IS NOT NULL
+  ) AS tg 
+  LEFT JOIN rechtsvorschrften_dokument AS d 
+  ON d.rechtsvorschrften_dokument_t_id  = tg.dokument
+  RETURNING *
 )
+/*
+ * GRUNDNUTZUNG ENDE
+ */
 
 SELECT
   *
 FROM
-  grundnutzung_zonenflaeche_insert
-
-
-
-
-  
+  geobasisdaten_typ_dokument
   
 
