@@ -9,6 +9,9 @@ DELETE FROM npl_ch.geobasisdaten_typ_dokument;
 
 /*
  * GRUNDNUTZUNG START
+ * Relation between geometry and document
+ * is ignored! Could result in errors (?) since
+ * these documents would dangle.
  */
 WITH typ_kt AS
 (
