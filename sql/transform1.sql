@@ -126,6 +126,9 @@ grundnutzung_zonenflaeche_insert AS
     grundnutzung_zonenflaeche
   RETURNING *
 ),
+-- Mit Typ joinen, um nicht Dokumente zu selektieren,
+-- die direkt mit der Geometrie verknüpft sind.
+-- Löst aber das Grundproblem nicht.
 rechtsvorschrften_dokument AS (
   SELECT
     nextval('npl_ch.t_ili2db_seq'::regclass) AS t_id,

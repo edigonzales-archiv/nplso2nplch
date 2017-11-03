@@ -17,6 +17,7 @@ FROM
   ON m.typ_grundnutzung = typ.t_id
 */
 
+/*
 SELECT 
   t_id AS rechtsvorschrften_dokument_t_id,
   CASE 
@@ -35,4 +36,13 @@ SELECT
 FROM
   npl_so.rechtsvorschrften_dokument
   
+*/
+
+SELECT
+  *
+FROM
+  npl_ch.rechtsvorschrften_dokument AS ch_dok 
+  LEFT JOIN
+
   
+
