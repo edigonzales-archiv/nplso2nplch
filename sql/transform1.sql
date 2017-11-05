@@ -9,9 +9,6 @@ DELETE FROM npl_ch.geobasisdaten_typ_dokument;
 
 /*
  * GRUNDNUTZUNG START
- * Relation between geometry and document
- * is ignored! Could result in errors (?) since
- * these documents would dangle.
  */
 WITH typ_kt AS
 (
@@ -36,10 +33,9 @@ WITH typ_kt AS
   RETURNING *
 ),
 /*
- * We cannot just insert the records since we need 
- * to reference some of them and we don't have unique
- * identifiers AFTER inserting (e.g. same code_kommunal 
- * for almost every municipalitiy).
+ * Selektieren und Inserten wird getrennt, damit
+ * man nicht den Ursprungs-Primary-Key verliert.
+ * Auf diesen wird bei späteren Queries gebraucht.
  */ 
 typ_kommunal AS 
 (
@@ -126,9 +122,6 @@ grundnutzung_zonenflaeche_insert AS
     grundnutzung_zonenflaeche
   RETURNING *
 ),
--- Mit Typ joinen, um nicht Dokumente zu selektieren,
--- die direkt mit der Geometrie verknüpft sind.
--- Löst aber das Grundproblem nicht.
 rechtsvorschrften_dokument AS (
   SELECT
     nextval('npl_ch.t_ili2db_seq'::regclass) AS t_id,
@@ -215,7 +208,9 @@ localiseduri_dokument_insert AS (
     multilingualuri_localiseduri_dokument
   RETURNING *
 ),
--- cross reference table: rechtsvorschrften_hinweisweiteredokumente
+-- Cross-Referenz-Tabelle: rechtsvorschrften_hinweisweiteredokumente
+-- Entspricht mehr oder weniger einem copy/paste mit ersetzen der 
+-- Fremdschlüsseln (lookup).
 rechtsvorschrften_hinweisweiteredokumente_insert AS 
 (
   INSERT INTO npl_ch.rechtsvorschrften_hinweisweiteredokumente
@@ -267,6 +262,76 @@ geobasisdaten_typ_dokument AS
   LEFT JOIN rechtsvorschrften_dokument AS d 
   ON d.rechtsvorschrften_dokument_t_id  = tg.dokument
   RETURNING *
+),
+-- Duplizieren von Typen, die von Geometrien referenziert werden,
+-- die auch eine direkte Assoziation zu einem Dokument haben.
+additional_typ_kommunal AS 
+(
+  SELECT
+    nextval('npl_ch.t_ili2db_seq'::regclass) AS t_id,  
+    typ_kommunal.t_id AS original_t_id,
+    typ_kommunal.code,
+    typ_kommunal.bezeichnung,
+    typ_kommunal.abkuerzung,
+    typ_kommunal.verbindlichkeit,
+    typ_kommunal.nutzungsziffer,
+    typ_kommunal.nutzungsziffer_art,
+    'DUMMY '::text || COALESCE(typ_kommunal.bemerkungen, '') AS bemerkungen,
+    typ_kommunal.typ_kt
+  FROM
+    npl_so.nutzungsplanung_grundnutzung AS g 
+    LEFT JOIN npl_so.nutzungsplanung_typ_grundnutzung AS typ
+    ON g.typ_grundnutzung = typ.t_id
+    LEFT JOIN typ_kommunal
+    ON typ.t_id = typ_kommunal.nutzungsplanung_typ_grundnutzung_t_id
+  WHERE
+    g.dokument IS NOT NULL
+
+),
+additional_typ_kommunal_insert AS 
+(
+  INSERT INTO npl_ch.geobasisdaten_typ 
+    (
+      t_id,
+      code,
+      bezeichnung,
+      abkuerzung,
+      verbindlichkeit,
+      nutzungsziffer,
+      nutzungsziffer_art,
+      bemerkungen,
+      typ_kt
+    )
+  SELECT  
+    t_id,
+    code,
+    bezeichnung,
+    abkuerzung,
+    verbindlichkeit,
+    nutzungsziffer,
+    nutzungsziffer_art,
+    bemerkungen,
+    typ_kt
+  FROM
+    additional_typ_kommunal
+  RETURNING *
+),
+-- Duplizieren der Assoziation Typ-Dokument.
+additional_typ_dokument_insert AS 
+(
+  INSERT INTO npl_ch.geobasisdaten_typ_dokument
+  (
+    typ,
+    vorschrift
+  )
+  SELECT
+    atk.t_id AS typ,
+    td.vorschrift AS vorschrift
+  FROM
+    geobasisdaten_typ_dokument AS td 
+    JOIN additional_typ_kommunal AS atk 
+    ON td.typ = atk.original_t_id
+  RETURNING *
 )
 /*
  * GRUNDNUTZUNG ENDE
@@ -275,6 +340,5 @@ geobasisdaten_typ_dokument AS
 SELECT
   *
 FROM
-  geobasisdaten_typ_dokument
+  additional_typ_dokument_insert
   
-
