@@ -1,5 +1,8 @@
 # nplso2nplch
 
+Für die Lieferungen an die Aggregationsinfrastruktur werden die Verweise auf die Dokumente nicht mitgeliefert. Vergleiche Diskussion an KKGEO-Workshop in Ascona 2015: "Wir machen keinen OEREB mit der AI".
+
+
 Schemaimport mit allen benötigten Modellen:
 ```
 java -jar ~/apps/ili2pg-3.9.1/ili2pg.jar --dbhost geodb-dev.cgjofbdf5rqg.eu-central-1.rds.amazonaws.com --dbdatabase xanadu2 --dbusr stefan --dbpwd XXXXXX --nameByTopic --disableValidation --defaultSrsCode 2056 --expandMultilingual --strokeArcs --createGeomIdx --createFkIdx --createEnumTabs --beautifyEnumDispName  --models "Nutzungsplanung_Hauptnutzung_V1_1;Nutzungsplanung_LV95_V1_1" --dbschema npl_ch --schemaimport
