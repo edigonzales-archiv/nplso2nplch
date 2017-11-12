@@ -1,4 +1,33 @@
+import ch.so.agi.gretl.tasks.*
+import ch.so.agi.gretl.steps.*
+
+description = """\n
+"""
+
+apply plugin: 'ch.so.agi.gretl'
+
+task transformToNplch(type: SqlExecutor) {
+
+}
+
+task exportXtf(type: Ili2pgExport) {
+
+}
+
+task zipXtfFile() {
+
+}
+
+task uploadZipFile {
+
+}
+
+/*
+
 1. Umbau -> 'staging'
 2. Export (ohne area validation)
 3. Zip
 4. Upload (exec, mit ohne area validation: 3.3.2 Prozess T_02: Aufbereitung Geodaten)
+
+*/
+

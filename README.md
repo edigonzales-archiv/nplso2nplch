@@ -53,6 +53,12 @@ xmllint --format wisen_ch.xtf -o wisen_ch.xtf
 java -jar ~/Apps/ilivalidator-1.5.0/ilivalidator.jar wisen_ch.xtf
 ```
 
+## TODO
+
+* Waldgrenzen
+* Lärmempfindlichkeitsstufen
+
+Ist je ein MGDM.
 
 
 ## Aggregationsinfrastruktur
