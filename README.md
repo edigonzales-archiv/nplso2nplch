@@ -29,5 +29,5 @@ java -jar ~/apps/ili2pg-4.1.0/ili2pg-4.1.0.jar --dbhost 192.168.50.2 --dbdatabas
 ```
 
 ```
-java -jar ~/apps/ili2pg-4.1.0/ili2pg-4.1.0.jar --dbhost 192.168.50.2 --dbdatabase edit --dbschema arp_laermempfindlichkeit_mgdm  --dbusr ddluser --dbpwd ddluser --defaultSrsCode 2056 --strokeArcs --createGeomIdx --createFk --createFkIdx --createEnumTabs --beautifyEnumDispName --createMetaInfo --createUnique --createNumChecks --nameByTopic --disableValidation --models Laermempfindlichkeitsstufen_LV95_V1_1 --export laerm_ch.xtf
+java -jar ~/apps/ili2pg-4.1.0/ili2pg-4.1.0.jar --dbhost 192.168.50.2 --dbdatabase edit --dbschema arp_laermempfindlichkeit_mgdm  --dbusr ddluser --dbpwd ddluser --defaultSrsCode 2056 --strokeArcs --createGeomIdx --createFk --createFkIdx --createEnumTabs --beautifyEnumDispName --createMetaInfo --createUnique --createNumChecks --nameByTopic --models Laermempfindlichkeitsstufen_LV95_V1_1 --export laerm_ch.xtf
 ```
